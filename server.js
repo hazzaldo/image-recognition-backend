@@ -27,7 +27,7 @@ const database = {
 }
 
 app.get('/', (req, res) => {
-    res.send('this is working');
+    res.send(database.users);
 })
 
 app.post('/signin', (req, res) => {
@@ -37,6 +37,19 @@ app.post('/signin', (req, res) => {
         } else {
             res.status(400).json('username or password is invalid');
         }
+})
+
+app.post('/register', (req, res) => {
+    const { name, email, password } = req.body;
+    database.users.push({
+        id: '3',
+        name: name,
+        email: email,
+        password: password,
+        imagesUploaded: 0,
+        joined: new Date()
+    })
+    res.json(database.users[database.users.length-1]);
 })
 
 //the 2nd param is a function that will run right after the listen operation 
