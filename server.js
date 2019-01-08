@@ -1,9 +1,42 @@
 const express = require('express');
-
+const bodyParser = require('body-parser');
 const app = express();
+
+//body-parser library module is a middleware, therefore we need to use 'use' 
+//function before we can use it
+app.use(bodyParser.json());
+const database = {
+    users: [
+        {
+            id: '1',
+            name: 'John',
+            email: 'john@gmail.com',
+            password: 'cookies',
+            imagesUploaded: 0,
+            joined: new Date()
+        },
+        {
+            id: '2',
+            name: 'Sally',
+            email: 'sally@gmail.com',
+            password: 'apple',
+            imagesUploaded: 0,
+            joined: new Date()
+        },
+    ]
+}
 
 app.get('/', (req, res) => {
     res.send('this is working');
+})
+
+app.post('/signin', (req, res) => {
+    if (req.body.email === database.users[0].email &&
+        req.body.password === database.users[0].password) {
+            res.json('signed in successfully');
+        } else {
+            res.status(400).json('username or password is invalid');
+        }
 })
 
 //the 2nd param is a function that will run right after the listen operation 
