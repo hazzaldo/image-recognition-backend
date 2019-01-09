@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const bcrypt = require('bcrypt-nodejs');
 const app = express();
 
 //body-parser library module is a middleware, therefore we need to use 'use' 
@@ -23,6 +24,14 @@ const database = {
             imagesUploaded: 0,
             joined: new Date()
         },
+    ],
+    login: [
+        {
+            id: '1',
+            name: 'john',
+            password: '',
+            email: 'john@gmail.com'
+        }
     ]
 }
 
@@ -31,6 +40,14 @@ app.get('/', (req, res) => {
 })
 
 app.post('/signin', (req, res) => {
+    bcrypt.compare("hareth", '$2a$10$5U5PPEoBeGs8u.PYlpubyOMP5Yp2loEMcVdBwTWknpsF7YdoRGrvS', function(err, res) {
+        //yes == true
+        console.log('first guess = ', res)
+    })
+    bcrypt.compare("veggies", '$2a$10$5V67SRsxgQQRcn.7VlGNHOR7r1TFSQib.6lzO2/t9yn7PlX0/V.16', function(err, res) {
+        //yes == true
+        console.log('second guess = ', res)
+    })
     if (req.body.email === database.users[0].email &&
         req.body.password === database.users[0].password) {
             res.json('signed in successfully');
@@ -41,6 +58,9 @@ app.post('/signin', (req, res) => {
 
 app.post('/register', (req, res) => {
     const { name, email, password } = req.body;
+    // bcrypt.hash(password, null, null, function(err, hash) {
+    //     console.log(hash);
+    // });
     database.users.push({
         id: '3',
         name: name,
