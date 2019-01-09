@@ -52,6 +52,23 @@ app.post('/register', (req, res) => {
     res.json(database.users[database.users.length-1]);
 })
 
+//GET user details to personalise page. The colon id part means we can enter
+//id in the URL in place of the id (as the URL params) to retrieve that 
+//user profile from the server
+app.get('/profile/:id', (req, res) => {
+    const { id } = req.params;
+    let found = false;
+    database.users.forEach(user => {
+        if (user.id === id) {
+            found = true;
+            return res.json(user);
+        } 
+    })
+    if (!found) {
+        res.status(404).json('user does not exist');
+    }
+})
+
 //the 2nd param is a function that will run right after the listen operation 
 //for port 3000 takes place.
 app.listen(3000, () => {
