@@ -65,7 +65,22 @@ app.get('/profile/:id', (req, res) => {
         } 
     })
     if (!found) {
-        res.status(404).json('user does not exist');
+        res.status(400).json('user does not exist');
+    }
+})
+
+app.post('/image_upload', (req, res) => {
+    const { id } = req.body;
+    let found = false;
+    database.users.forEach(user => {
+        if (user.id === id) {
+            found = true;
+            user.imagesUploaded++;
+            return res.json('image upload for user id ' + user.id + ' incremented successfully. User image uploads = ' + user.imagesUploaded);
+        } 
+    })
+    if (!found) {
+        res.status(400).json('user does not exist');
     }
 })
 
@@ -76,6 +91,7 @@ app.listen(3000, () => {
 });
 
 /*
+------ API documentation ----------
 / --> res = this is working
 /signin --> POST = success/fail //post because we're positing some data (e.g. username and passowrd). And we don't want to send password through the request query. So we send it in a request body over HTTPS, so that it's hidden from man-in-the-middle attacks and it's secure. 
 
