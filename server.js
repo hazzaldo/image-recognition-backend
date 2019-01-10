@@ -96,14 +96,14 @@ app.get('/profile/:id', (req, res) => {
     }
 })
 
-app.post('/image_upload', (req, res) => {
+app.put('/image_upload', (req, res) => {
     const { id } = req.body;
     let found = false;
     database.users.forEach(user => {
         if (user.id === id) {
             found = true;
             user.imagesUploaded++;
-            return res.json('image upload for user id ' + user.id + ' incremented successfully. User image uploads = ' + user.imagesUploaded);
+            return res.json(user.imagesUploaded);
         } 
     })
     if (!found) {
