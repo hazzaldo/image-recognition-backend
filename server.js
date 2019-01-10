@@ -1,11 +1,19 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt-nodejs');
+const cors = require('cors');
 const app = express();
 
 //body-parser library module is a middleware, therefore we need to use 'use' 
 //function before we can use it
 app.use(bodyParser.json());
+//you need the cors module in order to resolve the 
+//No 'Access-Control-Allow-Origin' error, which Google chrome
+//deploys as a security measure, when it sees that the source
+//node (or server), that the client is trying to talk to, is
+//not trusted, i.e. in case the source server is a cyber attacker
+//trying to get the client to download a malicious software.
+app.use(cors());
 const database = {
     users: [
         {
@@ -50,10 +58,10 @@ app.post('/signin', (req, res) => {
     })
     if (req.body.email === database.users[0].email &&
         req.body.password === database.users[0].password) {
-            res.json('signed in successfully');
-        } else {
-            res.status(400).json('username or password is invalid');
-        }
+        res.json(database.users[0]);
+    } else {
+        res.status(400).json('username or password is invalid');
+    }
 })
 
 app.post('/register', (req, res) => {
@@ -65,7 +73,6 @@ app.post('/register', (req, res) => {
         id: '3',
         name: name,
         email: email,
-        password: password,
         imagesUploaded: 0,
         joined: new Date()
     })
