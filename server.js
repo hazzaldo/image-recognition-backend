@@ -3,6 +3,20 @@ const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt-nodejs');
 const cors = require('cors');
 const app = express();
+const knex = require('knex');
+
+//initialise knex library to connect to the Postgres database
+const postgresDB = knex({
+    client: 'pg',
+    connection: {
+      host : '127.0.0.1',
+      user : 'postgres',
+      password : '',
+      database : 'imageRecognition'
+    }
+  });
+
+  console.log(postgresDB.select('*').from('users'));
 
 //body-parser library module is a middleware, therefore we need to use 'use' 
 //function before we can use it
