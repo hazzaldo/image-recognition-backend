@@ -115,22 +115,18 @@ app.get('/profile/:id', (req, res) => {
                 res.status(400).json(error);
             }
         })
-            .catch(err => res.status(400).json('error getting user'));
+            .catch(error => res.status(400).json('error getting user'));
 });
 
 app.put('/image_upload', (req, res) => {
     const { id } = req.body;
-    let found = false;
-    database.users.forEach(user => {
-        if (user.id === id) {
-            found = true;
-            user.imagesUploaded++;
-            return res.json(user.imagesUploaded);
-        } 
+    postgresDB('users').where('id', '=', id)
+    .increment('imagesuploaded', 1)
+    .returning('imagesuploaded')
+    .then(imagesuploaded => {
+       res.json(imagesuploaded[0]); 
     })
-    if (!found) {
-        res.status(400).json('user does not exist');
-    }
+        .catch(error => res.status(400).json('unable to get uploaded images count'));
 })
 
 //the 2nd param is a function that will run right after the listen operation 
