@@ -26,75 +26,73 @@ app.use(bodyParser.json());
 //not trusted, i.e. in case the source server is a cyber attacker
 //trying to get the client to download a malicious software.
 app.use(cors());
-const database = {
-    users: [
-        {
-            id: '1',
-            name: 'John',
-            email: 'john@gmail.com',
-            password: 'cookies',
-            imagesUploaded: 0,
-            joined: new Date()
-        },
-        {
-            id: '2',
-            name: 'Sally',
-            email: 'sally@gmail.com',
-            password: 'apple',
-            imagesUploaded: 0,
-            joined: new Date()
-        },
-    ],
-    login: [
-        {
-            id: '1',
-            name: 'john',
-            password: '',
-            email: 'john@gmail.com'
-        }
-    ]
-}
 
 app.get('/', (req, res) => {
     res.send(database.users);
-})
+});
 
 app.post('/signin', (req, res) => {
-    bcrypt.compare("hareth", '$2a$10$5U5PPEoBeGs8u.PYlpubyOMP5Yp2loEMcVdBwTWknpsF7YdoRGrvS', function(err, res) {
-        //yes == true
-        console.log('first guess = ', res)
+    postgresDB.select('email', 'hash').from('login')
+    .where('email', '=', req.body.email)
+    .then(data => {
+        const isValid = bcrypt.compareSync(req.body.password, data[0].hash);
+        if (isValid) {
+            return postgresDB.select('*').from('users')
+            .where('email', '=', req.body.email)
+            .then(user => {
+                res.json(user[0]);
+            })
+            .catch(error => res.status(400).json('unable to get user'));
+        } else {
+            res.status(400).json('invalid username or password');
+        }
     })
-    bcrypt.compare("veggies", '$2a$10$5V67SRsxgQQRcn.7VlGNHOR7r1TFSQib.6lzO2/t9yn7PlX0/V.16', function(err, res) {
-        //yes == true
-        console.log('second guess = ', res)
-    })
-    if (req.body.email === database.users[0].email &&
-        req.body.password === database.users[0].password) {
-        res.json(database.users[0]);
-    } else {
-        res.status(400).json('username or password is invalid');
-    }
-})
+    .catch(error => res.status(400).json('invalid username or password'))
+});
 
 app.post('/register', (req, res) => {
     const { name, email, password } = req.body;
-    // bcrypt.hash(password, null, null, function(err, hash) {
-    //     console.log(hash);
-    // });
-
-    console.log(email);
-    postgresDB('users')
-        .returning('*')
-        .insert({
-        email: email,
-        name: name,
-        joined: new Date()
-    })
-        .then(user => {
-            //when we register a user, there should only be one,
-            //so we're simply returning that user as a sign of 
-            //successful registeration
-            res.json(user[0]);
+    const hash = bcrypt.hashSync(password);
+    //the concept of trx is a transaction that ensures multiple sql
+    //queries run all one after the other correctly (in examples where
+    //say you need to update multiple tables with the incoming data).
+    //The transaction ensures all queries must run correctly otherwise
+    //any failure along the execution and it will roleback to previous 
+    //state, pre-transaction, to ensure the database stay consistant even
+    //when failure in queries take place.
+        postgresDB.transaction(trx => { 
+            trx.insert({
+               hash: hash,
+               email:  email,
+            })
+            .into('login')
+            .returning('email')
+            .then(loginEmail => {
+                return trx('users')
+                    .returning('*')
+                    .insert({
+                        //because we're returning an array of one email
+                        //so we just need to extract the email out of 
+                        //the array in its email format to store in the DB
+                        //correctly. You use trx instead of database
+                        //to run transactions such as insert, returning
+                        //tables. trx is mainly used when you want to 
+                        //execture more than query in one go making sure
+                        //they all have to succeed or rollback to previous 
+                        //state.
+                        email: loginEmail[0],
+                        name: name,
+                        joined: new Date()
+                    })
+                    .then(user => {
+                        //when we register a user, there should only be one,
+                        //so we're simply returning that user as a sign of 
+                        //successful registeration
+                        res.json(user[0]);
+                    })
+            })
+                .then(trx.commit)
+                .catch(trx.rollback);
         })
             .catch(error => res.status(400).json('unable to register'));
 })
@@ -108,7 +106,6 @@ app.get('/profile/:id', (req, res) => {
     //where({ id }), because both parameter and value are same (id).
     postgresDB.select('*').from('users').where({id})
         .then(user => {
-            console.log(user)
             if (user.length) {
                 res.json(user[0])
             } else {
