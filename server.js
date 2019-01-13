@@ -11,12 +11,10 @@ const postgresDB = knex({
     connection: {
       host : '127.0.0.1',
       user : 'postgres',
-      password : '',
-      database : 'imageRecognition'
+      password : 'Ch3lseafc',
+      database : 'imagerecognition'
     }
   });
-
-  console.log(postgresDB.select('*').from('users'));
 
 //body-parser library module is a middleware, therefore we need to use 'use' 
 //function before we can use it
@@ -83,14 +81,22 @@ app.post('/register', (req, res) => {
     // bcrypt.hash(password, null, null, function(err, hash) {
     //     console.log(hash);
     // });
-    database.users.push({
-        id: '3',
-        name: name,
+
+    console.log(email);
+    postgresDB('users')
+        .returning('*')
+        .insert({
         email: email,
-        imagesUploaded: 0,
+        name: name,
         joined: new Date()
     })
-    res.json(database.users[database.users.length-1]);
+        .then(user => {
+            //when we register a user, there should only be one,
+            //so we're simply returning that user as a sign of 
+            //successful registeration
+            res.json(user[0]);
+        })
+            .catch(error => res.status(400).json('unable to register'));
 })
 
 //GET user details to personalise page. The colon id part means we can enter
@@ -98,17 +104,19 @@ app.post('/register', (req, res) => {
 //user profile from the server
 app.get('/profile/:id', (req, res) => {
     const { id } = req.params;
-    let found = false;
-    database.users.forEach(user => {
-        if (user.id === id) {
-            found = true;
-            return res.json(user);
-        } 
-    })
-    if (!found) {
-        res.status(400).json('user does not exist');
-    }
-})
+    //rather than writing where({ id: id }) you can just write shorthand
+    //where({ id }), because both parameter and value are same (id).
+    postgresDB.select('*').from('users').where({id})
+        .then(user => {
+            console.log(user)
+            if (user.length) {
+                res.json(user[0])
+            } else {
+                res.status(400).json(error);
+            }
+        })
+            .catch(err => res.status(400).json('error getting user'));
+});
 
 app.put('/image_upload', (req, res) => {
     const { id } = req.body;
